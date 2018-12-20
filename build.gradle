@@ -1,0 +1,55 @@
+group 'docker'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: DockerRemoteApiPlugin
+apply plugin: DockerJavaApplicationPlugin
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.bmuschko:gradle-docker-plugin:3.0.7'
+    }
+}
+
+import com.bmuschko.gradle.docker.DockerJavaApplicationPlugin
+import com.bmuschko.gradle.docker.DockerRemoteApiPlugin
+import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
+
+sourceCompatibility = 1.8
+mainClassName = 'Service'
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile 'org.json:json:20171018'
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+}
+
+docker {
+    javaApplication {
+        maintainer = 'Akimova Maria'
+        baseImage = 'openjdk:latest'
+        tag = 'service'
+        ports = [8080]
+    }
+}
+
+task create(type: DockerCreateContainer) {
+    dependsOn dockerBuildImage
+    targetImageId { dockerBuildImage.imageId }
+    portBindings = ['8080:8080']
+}
+
+task start(type: DockerStartContainer) {
+    dependsOn create
+    targetContainerId { create.containerId }
+}
